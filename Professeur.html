@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S.I.B. | Scientific Intelligence Bureau - JJK</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --lab-cyan: #00f2ff;
+            --lab-blue: #0044ff;
+            --lab-danger: #ff003c;
+            --bg-dark: #02050a;
+            --panel-bg: rgba(5, 12, 20, 0.85);
+            --border-glow: rgba(0, 242, 255, 0.3);
+            --trans: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--lab-cyan); box-shadow: 0 0 10px var(--lab-cyan); }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #d1e8ff;
+            font-family: 'Rajdhani', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* --- DATA BACKGROUND ANIMATION --- */
+        #data-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        .scanline {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 2px, 3px 100%;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        /* --- SIDEBAR NAV --- */
+        nav {
+            width: 80px;
+            background: rgba(0, 5, 10, 0.95);
+            border-right: 1px solid var(--border-glow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 30px;
+            gap: 30px;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            width: 50px;
+            height: 50px;
+            border: 1px solid var(--border-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--trans);
+            position: relative;
+            background: rgba(0, 242, 255, 0.05);
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            background: var(--lab-cyan);
+            box-shadow: 0 0 20px var(--lab-cyan);
+            border-color: #fff;
+        }
+
+        .nav-btn.active svg { fill: #000; }
+        .nav-btn svg { width: 24px; fill: var(--lab-cyan); transition: var(--trans); }
+
+        .nav-tooltip {
+            position: absolute;
+            left: 70px;
+            background: var(--lab-cyan);
+            color: #000;
+            padding: 5px 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.3s;
+            white-space: nowrap;
+        }
+
+        .nav-btn:hover .nav-tooltip { opacity: 1; left: 85px; }
+
+        /* --- TOP BAR INFO --- */
+        header {
+            position: fixed;
+            top: 0; left: 80px; right: 0;
+            height: 60px;
+            border-bottom: 1px solid var(--border-glow);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            justify-content: space-between;
+            z-index: 90;
+        }
+
+        .header-title {
+            font-family: 'Orbitron';
+            font-size: 1.2rem;
+            letter-spacing: 3px;
+            color: var(--lab-cyan);
+            text-shadow: 0 0 10px var(--lab-cyan);
+        }
+
+        .header-status {
+            font-size: 0.8rem;
+            display: flex;
+            gap: 20px;
+            color: var(--lab-cyan);
+            font-family: 'Share Tech Mono';
+        }
+
+        /* --- MAIN LAYOUT --- */
+        main {
+            margin-top: 60px;
+            margin-left: 80px;
+            flex: 1;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page {
+            position: absolute;
+            top: 40px; left: 40px; right: 40px; bottom: 40px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: var(--trans);
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+        }
+
+        .page.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        /* --- BLOCKS & WIDGETS --- */
+        .glass-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-panel::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 4px; height: 100%;
+            background: var(--lab-cyan);
+        }
+
+        .panel-header {
+            font-family: 'Orbitron';
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(0, 242, 255, 0.1);
+            padding-bottom: 10px;
+            color: var(--lab-cyan);
+        }
+
+        /* --- STATS SPECIAL SCIENTIFIQUE --- */
+        .stat-widget {
+            margin-bottom: 20px;
+        }
+
+        .stat-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .stat-bar {
+            height: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px;
+            border: 1px solid rgba(0, 242, 255, 0.1);
+        }
+
+        .stat-progress {
+            height: 100%;
+            background: linear-gradient(90deg, var(--lab-blue), var(--lab-cyan));
+            width: 0%;
+            transition: 1.5s cubic-bezier(0.1, 0.5, 0.2, 1);
+            box-shadow: 0 0 10px var(--lab-cyan);
+        }
+
+        /* --- HISTOIRE (PLUS GRANDE) --- */
+        .history-content {
+            height: 100%;
+            overflow-y: auto;
+            padding-right: 20px;
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: #b0c4de;
+            text-align: justify;
+        }
+
+        .history-content h3 {
+            color: var(--lab-cyan);
+            font-family: 'Orbitron';
+            margin: 25px 0 10px 0;
+            font-size: 1rem;
+        }
+
+        .history-content p { margin-bottom: 15px; }
+
+        /* --- IDENTITY WIDGET --- */
+        .id-card {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .avatar-box {
+            width: 100%;
+            aspect-ratio: 1/1;
+            border: 1px solid var(--lab-cyan);
+            background: url('https://via.placeholder.com/400') center/cover;
+            position: relative;
+        }
+
+        .avatar-box::after {
+            content: "SCANNING...";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--lab-cyan);
+            box-shadow: 0 0 15px var(--lab-cyan);
+            animation: scan 3s infinite linear;
+        }
+
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        .data-label {
+            font-size: 0.7rem;
+            color: var(--lab-cyan);
+            text-transform: uppercase;
+            font-family: 'Share Tech Mono';
+        }
+
+        .data-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* --- CHARACTER TRAITS --- */
+        .trait-pill {
+            background: rgba(0, 242, 255, 0.1);
+            border: 1px solid var(--lab-cyan);
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            border-radius: 2px;
+            display: inline-block;
+            margin: 0 5px 10px 0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="scanline"></div>
+    <canvas id="data-bg"></canvas>
+
+    <nav>
+        <div class="nav-btn active" onclick="openPage('home')">
+            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <span class="nav-tooltip">Dossier Overview</span>
+        </div>
+        <div class="nav-btn" onclick="openPage('id')">
+            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <span class="nav-tooltip">Identification</span>
+        </div>
+        <div class="nav-btn" onclick="openPage('stats')">
+            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+            <span class="nav-tooltip">Scientific Data</span>
+        </div>
+        <div class="nav-btn" onclick="openPage('lore')">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+            <span class="nav-tooltip">Research Archives</span>
+        </div>
+    </nav>
+
+    <header>
+        <div class="header-title">SUBJECT: CLASSIFIED_G2</div>
+        <div class="header-status">
+            <span>SEC_LEVEL: 02</span>
+            <span>SYSTEM: STABLE</span>
+            <span id="digital-clock">00:00:00</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- PAGE 0: OVERVIEW -->
+        <section id="home" class="page active">
+            <div class="glass-panel">
+                <div class="panel-header"><span>RESUME_OPERATIF</span><span>ID: 882-X</span></div>
+                <h1 style="font-family: 'Orbitron'; font-size: 3.5rem; color: #fff;">[NOM DU PERSONNAGE]</h1>
+                <p style="color: var(--lab-cyan); font-size: 1.2rem; margin-bottom: 30px;">Directeur Adjoint - Section Scientifique & Médicale</p>
+                <div class="history-content">
+                    <p>"L'énergie occulte n'est pas une malédiction, c'est une ressource thermodynamique mal comprise."</p>
+                    <div style="margin-top: 40px; padding: 20px; border: 1px dashed var(--lab-cyan);">
+                        <h4 style="margin-bottom: 10px;">NOTE DU BUREAU DES EXORCISTES :</h4>
+                        Le sujet est une pièce maîtresse de la Section Scientifique. Bien que Grade 2 sur le terrain, ses contributions en laboratoire (analyse spectrale des résidus maudits) valent une accréditation de rang supérieur.
+                    </div>
+                </div>
+            </div>
+            <div class="glass-panel" style="background: rgba(0, 242, 255, 0.02);">
+                <div class="panel-header"><span>ALERT_LEVEL</span></div>
+                <div style="text-align: center; margin-top: 50px;">
+                    <div style="font-size: 4rem; font-family: 'Orbitron'; color: var(--lab-danger);">G2</div>
+                    <p>OFFICIAL GRADE</p>
+                    <div style="margin-top: 30px; font-size: 0.8rem; opacity: 0.6;">
+                        Section Scientifique<br>Division de Recherche de Tokyo
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 1: ID -->
+        <section id="id" class="page">
+            <div class="glass-panel">
+                <div class="panel-header"><span>BIOMETRIC_FILE</span></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div class="id-card">
+                        <label class="data-label">Nom de Code</label>
+                        <div class="data-value">[REMPLIR ICI]</div>
+                        <label class="data-label">Âge Biologique</label>
+                        <div class="data-value">[REMPLIR] ANS</div>
+                        <label class="data-label">Lignée / Clan</label>
+                        <div class="data-value">[NOM DU CLAN OU AUCUN]</div>
+                    </div>
+                    <div class="id-card">
+                        <label class="data-label">Spécialité</label>
+                        <div class="data-value">INGÉNIERIE OCCULTE</div>
+                        <label class="data-label">Accréditation</label>
+                        <div class="data-value">SECTION SCIENTIFIQUE</div>
+                        <label class="data-label">Statut</label>
+                        <div class="data-value" style="color: #00ff88;">ACTIF</div>
+                    </div>
+                </div>
+                <h3 style="margin: 20px 0; font-family: 'Orbitron'; font-size: 0.8rem;">PROFIL PSYCHOLOGIQUE</h3>
+                <div class="trait-pill">PRAGMATIQUE</div>
+                <div class="trait-pill">OBSESSIF</div>
+                <div class="trait-pill">CALME</div>
+                <div class="trait-pill">SANS PITIÉ (LOGIQUE)</div>
+                <p style="margin-top: 15px; font-size: 0.9rem; line-height: 1.5; opacity: 0.8;">
+                    [Décris ici son tempérament : Est-il froid ? Une personne qui voit les humains comme des sujets d'étude ? Ou au contraire, un scientifique qui veut sauver tout le monde par la médecine ?]
+                </p>
+            </div>
+            <div class="avatar-box"></div>
+        </section>
+
+        <!-- PAGE 2: STATS -->
+        <section id="stats" class="page">
+            <div class="glass-panel">
+                <div class="panel-header"><span>ANALYSE_DE_PERFORMANCE</span></div>
+                <div class="stats-grid">
+                    <div class="stat-widget">
+                        <div class="stat-info"><span>Intelligence Analytique</span><span>95%</span></div>
+                        <div class="stat-bar"><div class="stat-progress" data-w="95%"></div></div>
+                    </div>
+                    <div class="stat-widget">
+                        <div class="stat-info"><span>Connaissance Médicale</span><span>88%</span></div>
+                        <div class="stat-bar"><div class="stat-progress" data-w="88%"></div></div>
+                    </div>
+                    <div class="stat-widget">
+                        <div class="stat-info"><span>Ingénierie d'Outils Maudits</span><span>82%</span></div>
+                        <div class="stat-bar"><div class="stat-progress" data-w="82%"></div></div>
+                    </div>
+                    <div class="stat-widget">
+                        <div class="stat-info"><span>Détection d'Énergie Occulte</span><span>90%</span></div>
+                        <div class="stat-bar"><div class="stat-progress" data-w="90%"></div></div>
+                    </div>
+                    <div class="stat-widget">
+                        <div class="stat-info"><span>Combat Tactique</span><span>60%</span></div>
+                        <div class="stat-bar"><div class="stat-progress" data-w="60%"></div></div>
+                    </div>
+                    <div class="stat-widget">
+                        <div class="stat-info"><span>Sortie d'Énergie (Output)</span><span>55%</span></div>
+                        <div class="stat-bar"><div class="stat-progress" data-w="55%"></div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-panel">
+                <div class="panel-header"><span>LAB_ACCESS</span></div>
+                <p style="font-size: 0.8rem; margin-bottom: 10px;">Droit d'accès aux salles de confinement : <span style="color:var(--lab-cyan)">AUTORISÉ</span></p>
+                <p style="font-size: 0.8rem; margin-bottom: 10px;">Droit d'expérimentation sur cadavres de fléaux : <span style="color:var(--lab-cyan)">ILLIMITÉ</span></p>
+                <div style="margin-top: 30px; border: 1px solid var(--lab-cyan); height: 100px; display: flex; align-items: center; justify-content: center; font-family: 'Share Tech Mono'; opacity: 0.5;">
+                    [BLUEPRINT_IMG_PLACEHOLDER]
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 3: LORE (MAX PLACE) -->
+        <section id="lore" class="page">
+            <div class="glass-panel" style="grid-column: span 2;">
+                <div class="panel-header"><span>RESEARCH_LOGS_FULL_ARCHIVE</span><span>ENCRYPTED_FILE_09</span></div>
+                <div class="history-content">
+                    <h3>I. ORIGINES & ÉVEIL</h3>
+                    <p>[Raconte ici comment le personnage est né et comment il a manifesté son lien avec l'énergie occulte. Est-ce un accident de laboratoire ? Une hérédité scientifique ?]</p>
+                    
+                    <h3>II. L'ASCENSION SCIENTIFIQUE</h3>
+                    <p>[Explique son arrivée à l'école d'exorcisme. Comment il a fini par diriger la Section Scientifique. Quelles découvertes majeures a-t-il faites ? A-t-il créé de nouveaux outils maudits ?]</p>
+                    
+                    <h3>III. MISSIONS MARQUANTES</h3>
+                    <p>[Détaille une mission où sa logique a sauvé une équipe d'exorcistes. Comment son grade 2 est compensé par une stratégie sans faille.]</p>
+                    
+                    <h3>IV. OBJECTIFS ACTUELS</h3>
+                    <p>[Quelles sont ses motivations secrètes ? Cherche-t-il à supprimer l'énergie occulte du monde ou à l'amplifier par la science ?]</p>
+                    <br><br>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // --- CLOCK ---
+        function updateClock() {
+            const now = new Date();
+            const time = now.getHours().toString().padStart(2, '0') + ":" + 
+                         now.getMinutes().toString().padStart(2, '0') + ":" + 
+                         now.getSeconds().toString().padStart(2, '0');
+            document.getElementById('digital-clock').innerText = time;
+        }
+        setInterval(updateClock, 1000);
+
+        // --- NAVIGATION ---
+        function openPage(pageId) {
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => {
+                page.classList.remove('active');
+            });
+
+            const target = document.getElementById(pageId);
+            target.classList.add('active');
+
+            // Trigger progress bars
+            if(pageId === 'stats') {
+                setTimeout(() => {
+                    target.querySelectorAll('.stat-progress').forEach(p => {
+                        p.style.width = p.dataset.w;
+                    });
+                }, 100);
+            }
+        }
+
+        // --- BACKGROUND DATA EFFECT ---
+        const canvas = document.getElementById('data-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const chars = "010101BCDFGHJKLMNPQRSTVWXYZ";
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for(let x = 0; x < columns; x++) drops[x] = 1;
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(2, 5, 10, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#00f2ff";
+            ctx.font = fontSize + "px 'Share Tech Mono'";
+
+            for(let i = 0; i < drops.length; i++) {
+                const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 50);
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
